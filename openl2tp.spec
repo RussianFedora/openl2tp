@@ -4,8 +4,8 @@ Version: 1.8
 Release: 2%{?dist}.R
 License: GPL
 Group: System Environment/Daemons
-URL: ftp://downloads.sourceforge.net/projects/openl2tp/%{name}-%{version}.tar.gz
-Source0: %{name}-%{version}.tar.gz
+URL: http://www.openl2tp.org/
+Source0: ftp://ftp.openl2tp.org/releases/%{name}-%{version}/%{name}-%{version}.tar.gz
 Patch00:        fedora-compile.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 Requires: ppp == 2.4.5, readline >= 4.2, portmap
