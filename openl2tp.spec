@@ -1,18 +1,19 @@
-Summary: An L2TP client/server, designed for VPN use.
-Name: openl2tp
-Version: 1.8
-Release: 2%{?dist}.R
-License: GPL
-Group: System Environment/Daemons
-URL: http://www.openl2tp.org/
-Source0: ftp://ftp.openl2tp.org/releases/%{name}-%{version}/%{name}-%{version}.tar.gz
+Summary:	An L2TP client/server, designed for VPN use.
+Name: 		openl2tp
+Version: 	1.8
+Release: 	2%{?dist}.R
+License: 	GPL
+Group: 		System Environment/Daemons
+URL: 		http://www.openl2tp.org/
+Source0: 	ftp://ftp.openl2tp.org/releases/%{name}-%{version}/%{name}-%{version}.tar.gz
 Patch00:        fedora-compile.patch
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
-Requires: ppp >= 2.4.5, readline >= 4.2, portmap
-BuildRequires: flex-static
-ExclusiveOS: Linux
+BuildRoot: 	%{_tmppath}/%{name}-%{version}-%{release}
+Requires: 	ppp >= 2.4.5, readline >= 4.2, rpcbind
+Requires:	fedora-policy>=3.9.16-33
+ExclusiveOS: 	Linux
 
 BuildRequires: ppp >= 2.4.5, readline-devel >= 4.2, glibc >= 2.4, flex, bison, kernel-headers >= 2.6.23
+BuildRequires:  flex-static
 
 %description
 OpenL2TP is a complete implementation of RFC2661 - Layer Two Tunneling
