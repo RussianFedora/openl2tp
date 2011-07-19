@@ -8,13 +8,11 @@ URL: http://www.openl2tp.org/
 Source0: ftp://ftp.openl2tp.org/releases/%{name}-%{version}/%{name}-%{version}.tar.gz
 Patch00:        fedora-compile.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
-Requires: ppp == 2.4.5, readline >= 4.2, portmap
+Requires: ppp >= 2.4.5, readline >= 4.2, portmap
 BuildRequires: flex-static
 ExclusiveOS: Linux
 
-BuildRequires: ppp == 2.4.5, readline-devel >= 4.2, glibc >= 2.4, flex, bison, kernel-headers >= 2.6.23
-
-%define needs_pppd_plugins %(test 2.4.5 == 2.4.5 && echo 0 || echo 1)
+BuildRequires: ppp >= 2.4.5, readline-devel >= 4.2, glibc >= 2.4, flex, bison, kernel-headers >= 2.6.23
 
 %description
 OpenL2TP is a complete implementation of RFC2661 - Layer Two Tunneling
@@ -44,18 +42,6 @@ Group: Development/Libraries
 %description devel
 This package contains support files for building plugins for OpenL2TP,
 or applications that use the OpenL2TP APIs.
-
-%if %needs_pppd_plugins
-%package ppp
-Requires: openl2tp
-Summary: OpenL2TP support files for pppd
-Group: System Environment/Libraries
-
-%description ppp
-This package contains pppd plugins for OpenL2TP. Not
-required if using pppd 2.4.5 or later, since these plugins were
-integrated into ppp-2.4.5.
-%endif
 
 %prep
 %setup -q
@@ -103,13 +89,6 @@ fi
 %{_libdir}/openl2tp/l2tp_rpc.x
 %{_libdir}/openl2tp/l2tp_event.h
 %{_libdir}/openl2tp/event_sock.h
-
-%if %needs_pppd_plugins
-%files ppp
-%defattr(-,root,root,-)
-%{_libdir}/pppd/2.4.5/openl2tp.so
-%{_libdir}/pppd/2.4.5/pppol2tp.so
-%endif
 
 %changelog
 * Tue Jul 19 2011 Vasiliy N. Glazov <vascom2@gmail.com> - 1.8-2.R
