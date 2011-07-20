@@ -1,7 +1,7 @@
 Summary:	An L2TP client/server, designed for VPN use.
 Name: 		openl2tp
 Version: 	1.8
-Release: 	2%{?dist}.R
+Release: 	3%{?dist}.R
 License: 	GPL
 Group: 		System Environment/Daemons
 URL: 		http://www.openl2tp.org/
@@ -92,7 +92,7 @@ fi
 %{_libdir}/openl2tp/event_sock.h
 
 %changelog
-* Tue Jul 19 2011 Vasiliy N. Glazov <vascom2@gmail.com> - 1.8-2.R
+* Tue Jul 19 2011 Vasiliy N. Glazov <vascom2@gmail.com> - 1.8-3.R
 - added BuildRequires: flex-static
 - added compile patch 
 
