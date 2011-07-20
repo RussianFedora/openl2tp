@@ -9,7 +9,7 @@ Source0: 	ftp://ftp.openl2tp.org/releases/%{name}-%{version}/%{name}-%{version}.
 Patch00:        fedora-compile.patch
 BuildRoot: 	%{_tmppath}/%{name}-%{version}-%{release}
 Requires: 	ppp >= 2.4.5, readline >= 4.2, rpcbind
-Requires:	fedora-policy>=3.9.16-33
+Requires:	selinux-policy >= 3.9.16-33
 ExclusiveOS: 	Linux
 
 BuildRequires: ppp >= 2.4.5, readline-devel >= 4.2, glibc >= 2.4, flex, bison, kernel-headers >= 2.6.23
