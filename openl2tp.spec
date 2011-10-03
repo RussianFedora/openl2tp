@@ -1,18 +1,22 @@
-Summary:	An L2TP client/server, designed for VPN use.
-Name: 		openl2tp
-Version: 	1.8
-Release: 	5%{?dist}.R
-License: 	GPL
-Group: 		System Environment/Daemons
-URL: 		http://www.openl2tp.org/
-Source0: 	ftp://ftp.openl2tp.org/releases/%{name}-%{version}/%{name}-%{version}.tar.gz
-Patch00:        fedora-compile.patch
-BuildRoot: 	%{_tmppath}/%{name}-%{version}-%{release}
-Requires: 	ppp >= 2.4.5, readline >= 4.2, rpcbind
-Requires:	selinux-policy >= 3.9.16-33
-ExclusiveOS: 	Linux
+Summary:    An L2TP client/server, designed for VPN use.
+Name:       openl2tp
+Version:    1.8
+Release:    5%{?dist}.R
+License:    GPL
+Group:      System Environment/Daemons
+URL:        http://www.openl2tp.org/
+Source0:    ftp://ftp.openl2tp.org/releases/%{name}-%{version}/%{name}-%{version}.tar.gz
+Patch00:    fedora-compile.patch
 
-BuildRequires: ppp >= 2.4.5, readline-devel >= 4.2, glibc >= 2.4, flex, bison, kernel-headers >= 2.6.23
+Requires:   ppp >= 2.4.5, readline >= 4.2, rpcbind
+Requires:   selinux-policy >= 3.9.16-33
+
+BuildRequires:  ppp >= 2.4.5
+BuildRequires:  readline-devel >= 4.2
+BuildRequires:  glibc >= 2.4
+BuildRequires:  flex
+BuildRequires:  bison
+BuildRequires:  kernel-headers >= 2.6.23
 BuildRequires:  flex-static
 
 %description
@@ -37,8 +41,8 @@ consists of
 - a command line application, l2tpconfig, for management.
 
 %package devel
-Summary: OpenL2TP support files for plugin development
-Group: Development/Libraries
+Summary:    OpenL2TP support files for plugin development
+Group:      Development/Libraries
 
 %description devel
 This package contains support files for building plugins for OpenL2TP,
@@ -50,12 +54,12 @@ or applications that use the OpenL2TP APIs.
 
 %build
 make OPT_CFLAGS="$RPM_OPT_FLAGS" \
-	PPPD_VERSION=2.4.5
+    PPPD_VERSION=2.4.5
 
 %install
 [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT \
-	PPPD_VERSION=2.4.5
+    PPPD_VERSION=2.4.5
 
 %{__mkdir} -p $RPM_BUILD_ROOT/etc/rc.d/init.d $RPM_BUILD_ROOT/%{_sysconfdir}/sysconfig
 %{__cp} -f etc/rc.d/init.d/openl2tpd $RPM_BUILD_ROOT%{_sysconfdir}/rc.d/init.d/openl2tpd
@@ -63,7 +67,7 @@ make install DESTDIR=$RPM_BUILD_ROOT \
 
 %clean
 if [ "$RPM_BUILD_ROOT" != `echo $RPM_BUILD_ROOT | sed -e s/openl2tp-//` ]; then
-	rm -rf $RPM_BUILD_ROOT
+    rm -rf $RPM_BUILD_ROOT
 fi
 
 %files
