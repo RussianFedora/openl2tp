@@ -1,14 +1,17 @@
-Summary:    An L2TP client/server, designed for VPN use.
+Summary:    An L2TP client/server, designed for VPN use
 Name:       openl2tp
 Version:    1.8
-Release:    5%{?dist}.R
-License:    GPL
+Release:    6%{?dist}.R
+License:    GPLv2+
 Group:      System Environment/Daemons
 URL:        http://www.openl2tp.org/
 Source0:    ftp://ftp.openl2tp.org/releases/%{name}-%{version}/%{name}-%{version}.tar.gz
 Patch00:    fedora-compile.patch
+Patch01:    openl2tp-new.patch
 
-Requires:   ppp >= 2.4.5, readline >= 4.2, rpcbind
+Requires:   ppp >= 2.4.5
+Requires:   readline >= 4.2
+Requires:   rpcbind
 Requires:   selinux-policy >= 3.9.16-33
 
 BuildRequires:  ppp >= 2.4.5
@@ -51,6 +54,7 @@ or applications that use the OpenL2TP APIs.
 %prep
 %setup -q
 %patch00 -p1
+%patch01 -p1
 
 %build
 make OPT_CFLAGS="$RPM_OPT_FLAGS" \
@@ -86,7 +90,7 @@ fi
 %{_mandir}/man7/openl2tp.7.gz
 %{_mandir}/man8/openl2tpd.8.gz
 %{_initrddir}/openl2tpd
-%config %{_sysconfdir}/sysconfig/openl2tpd
+%config(noreplace) %{_sysconfdir}/sysconfig/openl2tpd
 
 %files devel
 %defattr(-,root,root,-)
@@ -96,6 +100,10 @@ fi
 %{_libdir}/openl2tp/event_sock.h
 
 %changelog
+* Thu Nov 03 2011 Vasiliy N. Glazov <vascom2@gmail.com> - 1.8-6.R
+- Added new patch http://forums.openl2tp.org/viewtopic.php?f=4&t=63
+- Added new patch http://forums.openl2tp.org/viewtopic.php?f=4&t=64
+
 * Wed Jul 20 2011 Vasiliy N. Glazov <vascom2@gmail.com> - 1.8-5.R
 - corrected requires
 

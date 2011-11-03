@@ -1,0 +1,395 @@
+diff -uNdr openl2tp-1.8/doc/openl2tp_rpc.4 openl2tp-1.8_new/doc/openl2tp_rpc.4
+--- openl2tp-1.8/doc/openl2tp_rpc.4	2010-11-09 17:50:58.000000000 +0300
++++ openl2tp-1.8_new/doc/openl2tp_rpc.4	2011-11-03 09:57:49.713614575 +0400
+@@ -719,6 +719,10 @@
+ .B chap_restart
+ Retransmission timeout for CHAP challenges. Default=3.
+ .TP
++.B clientip_as_ipparam
++Whether or not to pass the remote client ip (connecting IP) as ipparam to pppd
++(similar to to pptpd).
++.TP
+ .B pap_max_auth_reqs
+ Maximum number of PAP authenticate-request transmissions. Default=10.
+ .TP
+@@ -774,6 +778,10 @@
+ .B local_ip_addr
+ The IP address to assign to the local end of the PPP link.
+ .TP
++.B optionsfile
++Passes a file parameter to the pppd daemon, allowing for loading a custom
++options file.  See pppd(8) for more details.
++.TP
+ .B peer_ip_addr
+ The IP address to assign to the remote (peer) end of the PPP link.
+ .TP
+diff -uNdr openl2tp-1.8/l2tp_common.c openl2tp-1.8_new/l2tp_common.c
+--- openl2tp-1.8/l2tp_common.c	2008-01-08 20:23:51.000000000 +0300
++++ openl2tp-1.8_new/l2tp_common.c	2011-11-03 09:57:49.731034248 +0400
+@@ -931,6 +931,7 @@
+ 	if (OPTSTRING_PTR(pp->remote_name) != NULL) {
+ 		len += fprintf(file, "  remote name for authentication: %s\n", OPTSTRING(pp->remote_name));
+ 	}
++	len += fprintf(file, "  clientip as ipparam: %s\n", pp->clientip_as_ipparam ? "YES" : "NO");
+ 	len += fprintf(file, "  max connect time: %d, max failure count: %d, idle timeout: %d\n",
+ 		       pp->max_connect_time, pp->max_failure_count, pp->idle_timeout);
+ 	if (pp->asyncmap != 0) {
+@@ -938,6 +939,10 @@
+ 	}
+ 	len += fprintf(file, "  multilink: %s, proxy arp: %s\n", 
+ 		       pp->multilink ? "YES" : "NO", pp->proxy_arp ? "YES" : "NO");
++	//if (OPTSTRING_PTR(pp->optionsfile) != NULL) {
++		len += fprintf(file, "  optionsfile: %s\n", OPTSTRING(pp->optionsfile));
++	//}
++
+ 	len += fprintf(file, "  IP parameters:-\n");
+ 	ip_to_string(&local_ip[0], pp->local_ip_addr.s_addr);
+ 	ip_to_string(&peer_ip[0], pp->peer_ip_addr.s_addr);
+diff -uNdr openl2tp-1.8/l2tp_config.c openl2tp-1.8_new/l2tp_config.c
+--- openl2tp-1.8/l2tp_config.c	2010-01-18 13:35:14.000000000 +0300
++++ openl2tp-1.8_new/l2tp_config.c	2011-11-03 09:57:49.782376443 +0400
+@@ -3123,6 +3123,8 @@
+ 	L2TP_PPP_ARGID_LOCAL_NAME,
+ 	L2TP_PPP_ARGID_REMOTE_NAME,
+ 	L2TP_PPP_ARGID_PROXY_ARP,
++	L2TP_PPP_ARGID_OPTIONSFILE,
++	L2TP_PPP_ARGID_CLIENTIP_AS_IPPARAM,
+ } l2tp_ppp_arg_ids_t;
+  
+ #undef ARG
+@@ -3187,7 +3189,9 @@
+ 	ARG(REMOTE_NAME,	"remote_name",		0,	string,	"Name to assume for the remote peer for authentication purposes"),		\
+ 	ARG(USE_AS_DEFAULT_ROUTE, "default_route",	0,	bool,	"Use link as default route"),							\
+ 	ARG(MULTILINK,		"multilink",		0, 	bool, 	"Enable PPP multilink connections."),						\
+-	ARG(PROXY_ARP,		"proxy_arp",		0, 	bool, 	"Use proxy arp.")
++	ARG(PROXY_ARP,		"proxy_arp",		0, 	bool, 	"Use proxy arp."),								\
++	ARG(OPTIONSFILE,	"optionsfile",		0,	string, "ppp options file to use"),							\
++	ARG(CLIENTIP_AS_IPPARAM, "clientip_as_ipparam",	0,	bool,	"Pass the connecting client's IP as ipparam to pppd.")
+ 
+ 
+ static struct cli_arg_entry l2tp_args_ppp_profile_create[] = {
+@@ -3267,6 +3271,8 @@
+ 	FLG(USE_AS_DEFAULT_ROUTE, "default_route",	"Use link as default route"),							\
+ 	FLG(MULTILINK,		"multilink",		"Enable PPP multilink connections."),						\
+ 	FLG(PROXY_ARP,		"proxy_arp",		"Use proxy arp."),
++	FLG(OPTIONSFILE,	"optionsfile",		"ppp options file to use"),
++	FLG(CLIENTIP_AS_IPPARAM, "clientip_as_ipparam",	"Pass the connecting client's IP as ipparam to pppd."),
+ 	{ NULL, },
+ };
+ 
+@@ -3488,6 +3494,18 @@
+ 		msg->remote_name.valid = 1;
+ 		msg->flags2 |= L2TP_API_PPP_PROFILE_FLAG_REMOTE_NAME;
+ 		break;
++	case L2TP_PPP_ARGID_OPTIONSFILE:
++		OPTSTRING(msg->optionsfile) = strdup(arg_value);
++		if (OPTSTRING(msg->optionsfile) == NULL) {
++			result = -ENOMEM;
++			goto out;
++		}
++		msg->optionsfile.valid = 1;
++		msg->flags2 |= L2TP_API_PPP_PROFILE_FLAG_OPTIONSFILE;
++		break;
++	case L2TP_PPP_ARGID_CLIENTIP_AS_IPPARAM:
++		L2TP_ACT_PARSE_ARG(arg, arg_value, msg->clientip_as_ipparam, msg->flags2, L2TP_API_PPP_PROFILE_FLAG_CLIENTIP_AS_IPPARAM);
++		break;
+ 	}
+ 
+ 	result = 0;
+@@ -3856,6 +3874,12 @@
+ 		case L2TP_PPP_ARGID_REMOTE_NAME:
+ 			msg.flags2 |= L2TP_API_PPP_PROFILE_FLAG_REMOTE_NAME;
+ 			break;
++		case L2TP_PPP_ARGID_OPTIONSFILE:
++			msg.flags2 |= L2TP_API_PPP_PROFILE_FLAG_OPTIONSFILE;
++			break;
++		case L2TP_PPP_ARGID_CLIENTIP_AS_IPPARAM:
++			msg.flags2 |= L2TP_API_PPP_PROFILE_FLAG_CLIENTIP_AS_IPPARAM;
++			break;
+ 		}
+ 	} L2TP_ACT_END();
+ 
+@@ -4867,6 +4891,8 @@
+  			    L2TP_API_PPP_PROFILE_FLAG_LOCAL_NAME |
+  			    L2TP_API_PPP_PROFILE_FLAG_REMOTE_NAME |
+  			    L2TP_API_PPP_PROFILE_FLAG_PROXY_ARP |
++ 			    L2TP_API_PPP_PROFILE_FLAG_OPTIONSFILE |
++ 			    L2TP_API_PPP_PROFILE_FLAG_CLIENTIP_AS_IPPARAM |
+ 			    L2TP_API_PPP_PROFILE_FLAG_AUTH_NONE |
+ 			    L2TP_API_PPP_PROFILE_FLAG_AUTH_REFUSE_EAP |
+ 			    L2TP_API_PPP_PROFILE_FLAG_AUTH_REFUSE_MSCHAPV2 |
+@@ -5028,6 +5054,12 @@
+ 		if (cfg->flags2 & L2TP_API_PPP_PROFILE_FLAG_PROXY_ARP) {
+ 			fprintf(file, "\tproxy_arp=%s \\\n", Y_OR_N(cfg->proxy_arp));
+ 		}
++		if ((cfg->flags2 & L2TP_API_PPP_PROFILE_FLAG_OPTIONSFILE) && (OPTSTRING_PTR(cfg->optionsfile) != NULL)) {
++			fprintf(file, "\toptionsfile=%s \\\n", OPTSTRING_PTR(cfg->optionsfile));
++		}
++		if (cfg->flags2 & L2TP_API_PPP_PROFILE_FLAG_CLIENTIP_AS_IPPARAM) {
++			fprintf(file, "\tclientip_as_ipparam=%s \\\n", Y_OR_N(cfg->clientip_as_ipparam));
++		}
+ 		fprintf(file, "\n");
+ 	}
+ }
+diff -uNdr openl2tp-1.8/l2tp_config_parse.y openl2tp-1.8_new/l2tp_config_parse.y
+--- openl2tp-1.8/l2tp_config_parse.y	2010-11-09 17:50:58.000000000 +0300
++++ openl2tp-1.8_new/l2tp_config_parse.y	2011-11-03 09:57:49.796128817 +0400
+@@ -154,6 +154,8 @@
+ %token QUOTEDSTRING
+ %token BOOL
+ %token IPADDRESS
++%token OPTIONSFILE
++%token CLIENTIP_AS_IPPARAM
+ 
+ %token INITIAL_RCVD_LCP_CONFREQ
+ %token CALLING_NUMBER
+@@ -1167,6 +1169,23 @@
+ 			OPTSTRING(ppp_profile.remote_name) = $3.buf;
+ 			ppp_profile.remote_name.valid = 1;
+ 		}
++	|	OPTIONSFILE EQUALS STRING
++		{
++			ppp_profile.flags2 |= L2TP_API_PPP_PROFILE_FLAG_OPTIONSFILE;
++			OPTSTRING(ppp_profile.optionsfile) = $3.buf;
++			ppp_profile.optionsfile.valid = 1;
++		}
++	|	OPTIONSFILE EQUALS QUOTEDSTRING
++		{
++			ppp_profile.flags2 |= L2TP_API_PPP_PROFILE_FLAG_OPTIONSFILE;
++			OPTSTRING(ppp_profile.optionsfile) = $3.buf;
++			ppp_profile.optionsfile.valid = 1;
++		}
++	|	CLIENTIP_AS_IPPARAM EQUALS BOOL
++		{
++			ppp_profile.flags2 |= L2TP_API_PPP_PROFILE_FLAG_CLIENTIP_AS_IPPARAM;
++			ppp_profile.clientip_as_ipparam = $3;
++		}
+ 	;
+ 
+ tunnel_command
+diff -uNdr openl2tp-1.8/l2tp_config_token.l openl2tp-1.8_new/l2tp_config_token.l
+--- openl2tp-1.8/l2tp_config_token.l	2010-11-12 15:31:21.000000000 +0300
++++ openl2tp-1.8_new/l2tp_config_token.l	2011-11-03 09:57:49.807130713 +0400
+@@ -191,6 +191,8 @@
+ auth_eap				{ return(AUTH_EAP); }
+ auth_none				{ return(AUTH_NOAUTH); }
+ auth_peer				{ return(AUTH_PEER); }
++optionsfile				{ return(OPTIONSFILE); }
++clientip_as_ipparam			{ return(CLIENTIP_AS_IPPARAM); }
+ 
+ {ws}		{ }
+ {linecont}	{ lineno++; }
+diff -uNdr openl2tp-1.8/l2tp_ppp.c openl2tp-1.8_new/l2tp_ppp.c
+--- openl2tp-1.8/l2tp_ppp.c	2008-05-08 00:44:20.000000000 +0400
++++ openl2tp-1.8_new/l2tp_ppp.c	2011-11-03 09:57:49.811714838 +0400
+@@ -70,6 +70,8 @@
+ 	int				auth_refuse_mschap:1;
+ 	int				auth_refuse_mschapv2:1;
+ 	int				auth_refuse_eap:1;
++	char				*optionsfile;
++	int				clientip_as_ipparam;
+ };
+ 
+ static struct l2tp_ppp_profile *l2tp_ppp_defaults;
+@@ -241,6 +243,12 @@
+ 	if (msg->flags2 & L2TP_API_PPP_PROFILE_FLAG_REMOTE_NAME) {
+ 		L2TP_SET_OPTSTRING_VAR(profile, remote_name);
+ 	}
++	if (msg->flags2 & L2TP_API_PPP_PROFILE_FLAG_OPTIONSFILE) {
++		L2TP_SET_OPTSTRING_VAR(profile, optionsfile);
++	}
++	if (msg->flags2 & L2TP_API_PPP_PROFILE_FLAG_CLIENTIP_AS_IPPARAM) {
++		profile->clientip_as_ipparam = msg->clientip_as_ipparam;
++	}
+ 
+ out:
+ 	return result;
+@@ -290,6 +298,7 @@
+ 	profile->chap_interval = l2tp_ppp_defaults->chap_interval;
+ 	profile->chap_max_challenge = l2tp_ppp_defaults->chap_max_challenge;
+ 	profile->chap_restart = l2tp_ppp_defaults->chap_restart;
++	profile->clientip_as_ipparam = l2tp_ppp_defaults->clientip_as_ipparam;
+ 	profile->pap_max_auth_requests = l2tp_ppp_defaults->pap_max_auth_requests;
+ 	profile->pap_restart_interval = l2tp_ppp_defaults->pap_restart_interval;
+ 	profile->pap_timeout = l2tp_ppp_defaults->pap_timeout;
+@@ -346,6 +355,14 @@
+ 		}
+ 	}
+ 
++	if (l2tp_ppp_defaults->optionsfile != NULL) {
++		profile->optionsfile = strdup(l2tp_ppp_defaults->optionsfile);
++		if (profile->optionsfile == NULL) {
++			*result = -ENOMEM;
++			goto err;
++		}
++	}
++
+ 	/* Override defaults by user-supplied params */
+ 	*result = l2tp_ppp_profile_modify(&msg, profile);
+ 
+@@ -379,6 +396,24 @@
+ 	*result = -ENOMEM;
+ 	goto out;
+ err:
++	if (profile->radius_hint != NULL) {
++		free(profile->radius_hint);
++	}
++	if (profile->ip_pool_name != NULL) {
++		free(profile->ip_pool_name);
++	}
++	if (profile->profile_name != NULL) {
++		free(profile->profile_name);
++	}
++	if (profile->local_name != NULL) {
++		free(profile->local_name);
++	}
++	if (profile->remote_name != NULL) {
++		free(profile->remote_name);
++	}
++	if (profile->optionsfile != NULL) {
++		free(profile->optionsfile);
++	}
+ 	free(profile);
+ 	goto out;
+ }
+@@ -430,6 +465,9 @@
+ 	if (profile->remote_name != NULL) {
+ 		free(profile->remote_name);
+ 	}
++	if (profile->optionsfile != NULL) {
++		free(profile->optionsfile);
++	}
+ 	USL_POISON_MEMORY(profile, 0xe5, sizeof(*profile));
+ 	free(profile);
+ 	*result = 0;
+@@ -520,6 +558,7 @@
+ 	result->chap_interval = profile->chap_interval;
+ 	result->chap_max_challenge = profile->chap_max_challenge;
+ 	result->chap_restart = profile->chap_restart;
++	result->clientip_as_ipparam = profile->clientip_as_ipparam;
+ 	result->pap_max_auth_requests = profile->pap_max_auth_requests;
+ 	result->pap_restart_interval = profile->pap_restart_interval;
+ 	result->pap_timeout = profile->pap_timeout;
+@@ -578,6 +617,14 @@
+ 		}
+ 		result->remote_name.valid = 1;
+ 	}
++	if (profile->optionsfile != NULL) {
++		OPTSTRING(result->optionsfile) = strdup(profile->optionsfile);
++		if (OPTSTRING(result->optionsfile) == NULL) {
++			result->result_code = -ENOMEM;
++			goto out;
++		}
++		result->optionsfile.valid = 1;
++	}
+ 
+ out:
+ 	L2TP_DEBUG(L2TP_API, "%s: flags=%x/%x result=%d", __func__, result->flags, result->flags2, result->result_code);
+@@ -598,6 +645,9 @@
+ 	if (OPTSTRING_PTR(msg->remote_name) != NULL) {
+ 		free(OPTSTRING(msg->remote_name));
+ 	}
++	if (OPTSTRING_PTR(msg->optionsfile) != NULL) {
++		free(OPTSTRING(msg->optionsfile));
++	}
+ 	if (msg->profile_name != NULL) {
+ 		free(msg->profile_name);
+ 	}
+@@ -843,6 +893,15 @@
+ 		}
+ 		profile->remote_name = NULL;
+ 	}
++	if (msg.flags2 & L2TP_API_PPP_PROFILE_FLAG_OPTIONSFILE) {
++		if (profile->optionsfile != NULL) {
++			free(profile->optionsfile);
++		}
++		profile->optionsfile = NULL;
++	}
++	if (msg.flags2 & L2TP_API_PPP_PROFILE_FLAG_CLIENTIP_AS_IPPARAM) {
++		profile->use_radius = L2TP_API_PPP_PROFILE_DEFAULT_CLIENTIP_AS_IPPARAM;
++	}
+ 
+ 	/* Clear all requested flags */
+ 	profile->flags &= ~(msg.flags);
+@@ -937,6 +996,12 @@
+ 	}
+ 	l2tp_ppp_defaults->local_name = NULL;
+ 	l2tp_ppp_defaults->remote_name = NULL;
++	if (strlen(L2TP_API_PPP_PROFILE_DEFAULT_OPTIONSFILE) > 0) {
++		l2tp_ppp_defaults->optionsfile = strdup(L2TP_API_PPP_PROFILE_DEFAULT_OPTIONSFILE);
++		if (l2tp_ppp_defaults->optionsfile == NULL) {
++			goto nomem;
++		}
++	}
+ 
+ 	USL_LIST_HEAD_INIT(&l2tp_ppp_defaults->list);
+ 	usl_list_add(&l2tp_ppp_defaults->list, &l2tp_ppp_profile_list);
+diff -uNdr openl2tp-1.8/l2tp_rpc.x openl2tp-1.8_new/l2tp_rpc.x
+--- openl2tp-1.8/l2tp_rpc.x	2010-11-04 19:30:36.000000000 +0300
++++ openl2tp-1.8_new/l2tp_rpc.x	2011-11-03 09:57:49.823633560 +0400
+@@ -946,6 +946,8 @@
+ const L2TP_API_PPP_PROFILE_FLAG_AUTH_REFUSE_CHAP		= 65536;
+ const L2TP_API_PPP_PROFILE_FLAG_AUTH_REFUSE_PAP			= 131072;
+ const L2TP_API_PPP_PROFILE_FLAG_AUTH_PEER			= 262144;
++const L2TP_API_PPP_PROFILE_FLAG_OPTIONSFILE			= 524288;
++const L2TP_API_PPP_PROFILE_FLAG_CLIENTIP_AS_IPPARAM		= 1048576;
+ 
+ /* Default values for PPP profile attributes.
+  * These are used if an explicit value is not provided by the user.
+@@ -993,6 +995,8 @@
+ const L2TP_API_PPP_PROFILE_DEFAULT_USE_AS_DEFAULT_ROUTE		= 0;
+ const L2TP_API_PPP_PROFILE_DEFAULT_MULTILINK			= 0;
+ const L2TP_API_PPP_PROFILE_DEFAULT_PROXY_ARP			= 0;
++const L2TP_API_PPP_PROFILE_DEFAULT_OPTIONSFILE			= "";
++const L2TP_API_PPP_PROFILE_DEFAULT_CLIENTIP_AS_IPPARAM		= 0;
+ 
+ enum l2tp_api_ppp_sync_mode {
+ 	L2TP_API_PPP_SYNCMODE_SYNC_ASYNC,
+@@ -1051,6 +1055,8 @@
+ 	optstring			local_name;
+ 	optstring			remote_name;
+ 	bool				proxy_arp;
++	optstring			optionsfile;
++	bool				clientip_as_ipparam;
+ };
+ 
+ struct l2tp_api_ppp_profile_list_entry {
+diff -uNdr openl2tp-1.8/plugins/ppp_unix.c openl2tp-1.8_new/plugins/ppp_unix.c
+--- openl2tp-1.8/plugins/ppp_unix.c	2010-11-22 17:03:48.000000000 +0300
++++ openl2tp-1.8_new/plugins/ppp_unix.c	2011-11-03 09:57:49.833718633 +0400
+@@ -282,12 +282,26 @@
+ 		}
+ 	}
+ 
++	syslog(LOG_ERR, "checking for optionsfile");
++	if ((params->flags2 & L2TP_API_PPP_PROFILE_FLAG_OPTIONSFILE) && (OPTSTRING_PTR(params->optionsfile) != NULL)) {
++		syslog(LOG_ERR, "setting options=%s", OPTSTRING(params->optionsfile));
++		argv[arg++] = "file";
++		argv[arg++] = strdup(OPTSTRING(params->optionsfile));
++	}
++
+ 	/* By default, use sync mode */
+ 	if (!((params->flags & L2TP_API_PPP_PROFILE_FLAG_SYNC_MODE) &&
+ 	      (params->sync_mode == L2TP_API_PPP_SYNCMODE_ASYNC))) {
+ 		argv[arg++] = "sync";
+ 	}
+ 
++	/* Check if we should pass ipparam */
++	if (params->flags2 & L2TP_API_PPP_PROFILE_FLAG_CLIENTIP_AS_IPPARAM) {
++		argv[arg++] = "ipparam";
++		ip.s_addr = l2tp_tunnel_get_peer_addr(ppp->tunnel)->sin_addr.s_addr;
++		argv[arg++] = strdup(inet_ntoa(ip));
++	}
++
+ 	/* ppp auth options */
+ 	if ((params->flags2 & L2TP_API_PPP_PROFILE_FLAG_AUTH_REFUSE_EAP) &&
+ 	     params->auth_refuse_eap) {
+@@ -888,6 +902,8 @@
+ 
+ 		if (ppp->ppp_profile_data->proxy_arp) {
+ 			argv[arg++] = "proxyarp";
++		}else{
++			argv[arg++] = "noproxyarp";
+ 		}
+ 
+ 		argv[arg++] = "plugin";
