@@ -1,7 +1,7 @@
 Summary:    An L2TP client/server, designed for VPN use
 Name:       openl2tp
 Version:    1.8
-Release:    6%{?dist}
+Release:    7%{?dist}
 License:    GPLv2+
 Group:      System Environment/Daemons
 URL:        http://www.openl2tp.org/
@@ -12,7 +12,7 @@ Patch01:    openl2tp-new.patch
 Requires:   ppp >= 2.4.5
 Requires:   readline >= 4.2
 Requires:   rpcbind
-Requires:   selinux-policy >= 3.9.16-33
+Requires:   kernel-modules-extra
 
 BuildRequires:  ppp >= 2.4.5
 BuildRequires:  readline-devel >= 4.2
@@ -100,6 +100,9 @@ fi
 %{_libdir}/openl2tp/event_sock.h
 
 %changelog
+* Sun Jun 24 2012 Vasiliy N. Glazov <vascom2@gmail.com> - 1.8-7.R
+- added kernel-modules-extra to Requires
+
 * Thu Nov 03 2011 Vasiliy N. Glazov <vascom2@gmail.com> - 1.8-6.R
 - Added new patch http://forums.openl2tp.org/viewtopic.php?f=4&t=63
 - Added new patch http://forums.openl2tp.org/viewtopic.php?f=4&t=64
