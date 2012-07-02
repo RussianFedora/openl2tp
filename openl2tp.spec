@@ -1,7 +1,7 @@
 Summary:    An L2TP client/server, designed for VPN use
 Name:       openl2tp
 Version:    1.8
-Release:    7%{?dist}
+Release:    8%{?dist}
 License:    GPLv2+
 Group:      System Environment/Daemons
 URL:        http://www.openl2tp.org/
@@ -12,7 +12,9 @@ Patch01:    openl2tp-new.patch
 Requires:   ppp >= 2.4.5
 Requires:   readline >= 4.2
 Requires:   rpcbind
+%if 0%{?fedora} >= 17
 Requires:   kernel-modules-extra
+%endif
 
 BuildRequires:  ppp >= 2.4.5
 BuildRequires:  readline-devel >= 4.2
@@ -100,6 +102,9 @@ fi
 %{_libdir}/openl2tp/event_sock.h
 
 %changelog
+* Mon Jul 02 2012 Vasiliy N. Glazov <vascom2@gmail.com> - 1.8-8.R
+- drop kernel-modules-extra for old Fedora
+
 * Sun Jun 24 2012 Vasiliy N. Glazov <vascom2@gmail.com> - 1.8-7.R
 - added kernel-modules-extra to Requires
 
